@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# superstack-pipeline setup — one command to get the full pipeline on a new machine
+set -e
+
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="$HOME/.claude/skills"
+UPSTREAM_DIR="$REPO_DIR/.upstream"
+
+# Superpowers skills to pull
+SUPERPOWERS_SKILLS="subagent-driven-development test-driven-development verification-before-completion writing-plans"
+
+# Custom skills owned by this repo
+CUSTOM_SKILLS="pipeline pipeline-update"
+
+echo "=== superstack-pipeline setup ==="
+
+# --- 1. gstack ---
+echo ""
+echo "[1/3] Setting up gstack..."
+if [ -d "$SKILLS_DIR/gstack/.git" ]; then
+    cd "$SKILLS_DIR/gstack"
+    BEFORE=$(git rev-parse HEAD)
+    git pull --ff-only
+    AFTER=$(git rev-parse HEAD)
+    if [ "$BEFORE" = "$AFTER" ]; then
+        echo "  gstack already up to date, skipping setup."
+    else
+        echo "  gstack updated $(git log --oneline "$BEFORE..$AFTER" | wc -l | tr -d ' ') commits, re-running setup..."
+        ./setup
+    fi
+else
+    echo "  Cloning gstack..."
+    git clone https://github.com/garrytan/gstack.git "$SKILLS_DIR/gstack"
+    echo "  Running gstack setup..."
+    cd "$SKILLS_DIR/gstack" && ./setup
+fi
+
+# --- 2. superpowers ---
+echo ""
+echo "[2/3] Setting up superpowers skills..."
+mkdir -p "$UPSTREAM_DIR"
+SUPER_CHANGED=false
+if [ -d "$UPSTREAM_DIR/superpowers/.git" ]; then
+    cd "$UPSTREAM_DIR/superpowers"
+    BEFORE=$(git rev-parse HEAD)
+    git pull --ff-only
+    AFTER=$(git rev-parse HEAD)
+    if [ "$BEFORE" != "$AFTER" ]; then
+        SUPER_CHANGED=true
+    fi
+else
+    echo "  Cloning superpowers..."
+    git clone git@github.com:obra/superpowers.git "$UPSTREAM_DIR/superpowers"
+    SUPER_CHANGED=true
+fi
+for skill in $SUPERPOWERS_SKILLS; do
+    if [ ! -d "$UPSTREAM_DIR/superpowers/skills/$skill" ]; then
+        echo "  WARNING: $skill not found in superpowers repo"
+        continue
+    fi
+    if $SUPER_CHANGED || [ ! -d "$SKILLS_DIR/$skill" ]; then
+        mkdir -p "$SKILLS_DIR/$skill"
+        cp -r "$UPSTREAM_DIR/superpowers/skills/$skill/"* "$SKILLS_DIR/$skill/"
+        echo "  Installed $skill"
+    else
+        echo "  $skill already up to date, skipped."
+    fi
+done
+
+# --- 3. custom skills from this repo ---
+echo ""
+echo "[3/3] Installing custom pipeline skills..."
+for skill in $CUSTOM_SKILLS; do
+    src="$REPO_DIR/skills/$skill/SKILL.md"
+    dst="$SKILLS_DIR/$skill/SKILL.md"
+    if [ -f "$dst" ] && diff -q "$src" "$dst" >/dev/null 2>&1; then
+        echo "  $skill already up to date, skipped."
+    else
+        mkdir -p "$SKILLS_DIR/$skill"
+        cp -r "$REPO_DIR/skills/$skill/"* "$SKILLS_DIR/$skill/"
+        echo "  Installed $skill"
+    fi
+done
+
+echo ""
+echo "=== Done! Full pipeline installed. ==="
+echo "  gstack:      $SKILLS_DIR/gstack"
+echo "  superpowers:  $UPSTREAM_DIR/superpowers"
+echo "  custom:       $REPO_DIR/skills/"
+echo ""
+echo "Run ./update to pull latest from upstream sources."
