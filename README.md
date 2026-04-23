@@ -42,17 +42,24 @@ Or from Claude Code:
 THINK
   1. /office-hours              Clarify what to build
   2. /writing-plans             Write the implementation plan
-  3. /plan-eng-review           Lock architecture + test plan
-     /plan-ceo-review           (optional) Challenge scope/ambition
-     /plan-design-review        (optional) If the project has UI
+  3. /autoplan                  Batched plan review (CEO + design + eng + DX + codex)
+                                Fast path — auto-decides; surfaces close calls at a gate.
+                                Manual fallback: /plan-ceo-review, /plan-design-review,
+                                /plan-eng-review, /codex consult
 
 BUILD
-  4. /subagent-driven-development
+  4. /guard <project-dir>       Scope edits + destructive-command warnings
+  5. /subagent-driven-development
      (each subagent uses /test-driven-development + /verification-before-completion)
 
 VERIFY + SHIP
-  5. /review                    Pre-landing code review
-  6. /qa + /design-review       (if UI) Test and polish
-  7. /ship                      Version bump, changelog, PR
-  8. /document-release          Sync docs to what shipped
+  6. /review                    Pre-landing code review
+  7. /codex review              Cross-model diff review (independent model)
+  8. /qa + /design-review       (if UI) Test and polish
+  9. /ship                      Version bump, changelog, PR
+  10. /document-release         Sync docs to what shipped
+  11. /unfreeze                 Release the guard scope
+
+If a step fails or you hit a bug mid-pipeline:
+  * /investigate                Root-cause-first debugging before retrying
 ```
