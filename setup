@@ -20,6 +20,11 @@ echo "[1/3] Setting up gstack..."
 if [ -d "$SKILLS_DIR/gstack/.git" ]; then
     cd "$SKILLS_DIR/gstack"
     BEFORE=$(git rev-parse HEAD)
+    # gstack's setup rebuilds checked-in binaries (e.g. bin/gstack-global-discover),
+    # which dirties the tree and blocks --ff-only. Reset before pull; setup rebuilds.
+    if ! git diff --quiet || ! git diff --cached --quiet; then
+        git reset --hard HEAD >/dev/null
+    fi
     git pull --ff-only
     AFTER=$(git rev-parse HEAD)
     if [ "$BEFORE" = "$AFTER" ]; then
