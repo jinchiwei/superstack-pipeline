@@ -35,6 +35,14 @@ else
     exit 1
 fi
 
+# --- 1b. apply local patches to gstack skills ---
+# Run AFTER gstack pull so any regenerated SKILL.md files get our patches.
+cd "$REPO_DIR"
+for patch in "$REPO_DIR"/patches/*.sh; do
+    [ -f "$patch" ] || continue
+    "$patch"
+done
+
 # --- 2. superpowers ---
 echo ""
 echo "[2/3] Updating superpowers skills..."
