@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# superstack-pipeline update — pull latest from gstack + superpowers
+# superstack update — pull latest from gstack + superpowers
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -9,7 +9,7 @@ UPSTREAM_DIR="$REPO_DIR/.upstream"
 SUPERPOWERS_SKILLS="subagent-driven-development test-driven-development verification-before-completion writing-plans"
 CUSTOM_SKILLS="pipeline pipeline-update"
 
-echo "=== superstack-pipeline update ==="
+echo "=== superstack update ==="
 
 # --- 1. gstack ---
 echo ""

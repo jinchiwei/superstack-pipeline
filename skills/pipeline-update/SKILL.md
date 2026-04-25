@@ -5,7 +5,7 @@ description: Update pipeline skills from latest superpowers and gstack repos. Us
 
 # Pipeline Update
 
-Run the superstack-pipeline update script to pull latest from all upstream sources.
+Run the superstack update script to pull latest from all upstream sources.
 
 ## Steps
 
@@ -13,7 +13,7 @@ Run the superstack-pipeline update script to pull latest from all upstream sourc
 
 ```bash
 # Check common locations
-for dir in ~/arcadia/superstack-pipeline ~/superstack-pipeline; do
+for dir in ~/arcadia/superstack ~/superstack ~/arcadia/superstack-pipeline ~/superstack-pipeline; do
     if [ -f "$dir/update" ]; then
         echo "FOUND: $dir"
         break
@@ -21,7 +21,7 @@ for dir in ~/arcadia/superstack-pipeline ~/superstack-pipeline; do
 done
 ```
 
-If not found, tell the user: "I can't find the superstack-pipeline repo. Where is it cloned?"
+If not found, tell the user: "I can't find the superstack repo. Where is it cloned?"
 
 ### Step 2: Run update
 

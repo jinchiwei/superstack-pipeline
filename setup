@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# superstack-pipeline setup — one command to get the full pipeline on a new machine
+# superstack setup — one command to get the full pipeline on a new machine
 set -e
 
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -12,7 +12,7 @@ SUPERPOWERS_SKILLS="subagent-driven-development test-driven-development verifica
 # Custom skills owned by this repo
 CUSTOM_SKILLS="pipeline pipeline-update"
 
-echo "=== superstack-pipeline setup ==="
+echo "=== superstack setup ==="
 
 # --- 1. gstack ---
 echo ""

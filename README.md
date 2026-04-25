@@ -1,12 +1,12 @@
-# superstack-pipeline
+# superstack
 
 Blends complementary skills from [superpowers](https://github.com/obra/superpowers) and [gstack](https://github.com/garrytan/gstack) into a single pipeline for Claude Code with minimal overhead.
 
 ## Setup
 
 ```bash
-git clone git@github.com:jinchiwei/superstack-pipeline.git ~/arcadia/superstack-pipeline
-cd ~/arcadia/superstack-pipeline
+git clone git@github.com:jinchiwei/superstack.git ~/arcadia/superstack
+cd ~/arcadia/superstack
 ./setup
 ```
 
