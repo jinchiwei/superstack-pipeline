@@ -1,8 +1,8 @@
 # superstack
 
-Blends complementary skills from [superpowers](https://github.com/obra/superpowers) and [gstack](https://github.com/garrytan/gstack) into a single pipeline for Claude Code with minimal overhead.
+Blends complementary skills from [superpowers](https://github.com/obra/superpowers) and [gstack](https://github.com/garrytan/gstack) into a single pipeline for Claude Code and OpenAI Codex with minimal overhead.
 
-## Setup
+## Claude Setup
 
 ```bash
 git clone git@github.com:jinchiwei/superstack.git ~/arcadia/superstack
@@ -14,12 +14,38 @@ Requires [bun](https://bun.sh) (for gstack's browser build).
 
 Running `./setup` again is safe -- it skips work when everything is already up to date.
 
+## Codex Setup
+
+Install the Codex version of the same pipeline:
+
+```bash
+cd ~/arcadia/superstack
+./install-codex
+```
+
+This command:
+
+- runs `./setup` so the gstack and superpowers sources are present
+- refreshes the four Superpowers-derived Codex overlays from upstream `superpowers/skills`
+- runs gstack's `./setup --host codex` to generate `~/.codex/skills/gstack-*` when the generated skills are missing or stale
+- compacts generated gstack skill descriptions to avoid Codex skill-budget warnings
+- installs the Codex overlays from `codex-skills/` into `~/.codex/skills`
+
+The Codex overlays include `$pipeline`, `$writing-plans`, `$subagent-driven-development`,
+`$test-driven-development`, `$verification-before-completion`, `$pipeline-update`,
+`$pipeline-update_codex`, and `$claude`.
+
+Reruns are idempotent: if gstack and the generated Codex skills are current, dependency-heavy
+generation is skipped. Use `./install-codex --force-gstack-codex` to force regeneration, or
+`./install-codex --no-compact-descriptions` to leave generated descriptions untouched.
+
 ## Update
 
 Pull latest from upstream sources:
 
 ```bash
 ./update
+./install-codex  # if you also use Codex
 ```
 
 Or from Claude Code:
@@ -32,9 +58,10 @@ Or from Claude Code:
 
 | Source | Skills |
 |--------|--------|
-| **gstack** | browse, qa, ship, design-*, plan-*, review, office-hours, and [more](https://github.com/garrytan/gstack) |
+| **gstack** | browse, qa, ship, design-\*, plan-\*, review, office-hours, and [more](https://github.com/garrytan/gstack) |
 | **superpowers** | subagent-driven-development, test-driven-development, verification-before-completion, writing-plans |
 | **this repo** | pipeline, pipeline-update |
+| **this repo, Codex only** | claude second-opinion skill |
 
 ## The pipeline
 
@@ -63,3 +90,7 @@ VERIFY + SHIP
 If a step fails or you hit a bug mid-pipeline:
   * /investigate                Root-cause-first debugging before retrying
 ```
+
+For Codex, the equivalent pipeline uses `$gstack-*` skills and replaces the old
+Claude-side `/codex review` step with `$claude review`, which calls Claude Code with
+xhigh effort for an outside-model pass.

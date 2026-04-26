@@ -1,0 +1,6 @@
+interface:
+  display_name: "Claude Second Opinion"
+  short_description: "High-effort Claude review from Codex"
+  default_prompt: "Use $claude to run a high-effort outside-model review of this diff."
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pipeline Update"
+  short_description: "Refresh pipeline and gstack skills"
+  default_prompt: "Use $pipeline-update to update the Codex pipeline skills."
+policy:
+  allow_implicit_invocation: true

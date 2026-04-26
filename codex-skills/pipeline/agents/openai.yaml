@@ -1,0 +1,6 @@
+interface:
+  display_name: "Pipeline"
+  short_description: "Ideation-to-ship workflow"
+  default_prompt: "Use $pipeline to walk this project from idea to shipped code."
+policy:
+  allow_implicit_invocation: true

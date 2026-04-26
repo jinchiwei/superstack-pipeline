@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# Refresh Superpowers-derived Codex overlay skills from the upstream checkout.
+#
+# Superpowers ships Codex support through its canonical skills/ tree plus
+# .codex-plugin/plugin.json. Superstack copies the four pipeline-critical
+# skills from that upstream tree, then applies small deterministic wording
+# changes for Codex's tool names and delegation model.
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+UPSTREAM_SKILLS_DIR="$REPO_DIR/.upstream/superpowers/skills"
+CODEX_SKILLS_DIR="$REPO_DIR/codex-skills"
+
+SUPERPOWERS_CODEX_SKILLS=(
+  subagent-driven-development
+  test-driven-development
+  verification-before-completion
+  writing-plans
+)
+
+copy_skill() {
+  local skill="$1"
+  local src="$UPSTREAM_SKILLS_DIR/$skill"
+  local dst="$CODEX_SKILLS_DIR/$skill"
+
+  if [ ! -f "$src/SKILL.md" ]; then
+    echo "  ERROR: upstream superpowers skill missing: $src/SKILL.md" >&2
+    exit 1
+  fi
+
+  rm -rf "$dst"
+  mkdir -p "$(dirname "$dst")"
+  cp -R "$src" "$dst"
+}
+
+patch_file() {
+  local file="$1"
+  shift
+  [ -f "$file" ] || return 0
+  perl -0pi -e "$*" "$file"
+}
+
+echo "Refreshing Codex superpowers overlays from $UPSTREAM_SKILLS_DIR..."
+
+for skill in "${SUPERPOWERS_CODEX_SKILLS[@]}"; do
+  copy_skill "$skill"
+  echo "  refreshed $skill"
+done
+
+patch_file "$CODEX_SKILLS_DIR/writing-plans/SKILL.md" '
+  s/assuming the engineer has zero context/assuming the implementer has zero context/g;
+  s/, how to test it/, and how to test it/g;
+  s/\*\*Context:\*\* This should be run in a dedicated worktree \(created by brainstorming skill\)\./**Context:** For large or risky work, create or ask for a dedicated worktree before planning. For small contained work, planning in the current workspace is fine./g;
+  s/> \*\*For agentic workers:\*\* REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development \(recommended\) or superpowers:executing-plans to implement this plan task-by-task\. Steps use checkbox \(`- \[ \]`\) syntax for tracking\./> **For agentic workers:** Recommended execution skill: `\$subagent-driven-development` for independent tasks, or inline execution in the current Codex session for tightly coupled work. Steps use checkbox (`- [ ]`) syntax for tracking./g;
+  s/\*\*1\. Subagent-Driven \(recommended\)\*\* - I dispatch a fresh subagent per task, review between tasks, fast iteration/**1. Subagent-Driven (recommended for independent tasks)** - I delegate each task to a fresh worker subagent when Codex delegation rules allow it, review between tasks, fast iteration/g;
+  s/\*\*2\. Inline Execution\*\* - Execute tasks in this session using executing-plans, batch execution with checkpoints/**2. Inline Execution** - Execute tasks in this session with checkpoints/g;
+  s/\*\*REQUIRED SUB-SKILL:\*\* Use superpowers:subagent-driven-development/**REQUIRED SUB-SKILL:** Use `\$subagent-driven-development`/g;
+  s/\n\*\*If Inline Execution chosen:\*\*\n- \*\*REQUIRED SUB-SKILL:\*\* Use superpowers:executing-plans\n- Batch execution with checkpoints for review/\n**If Inline Execution chosen:**\n- Batch execution with checkpoints for review/g;
+'
+
+patch_file "$CODEX_SKILLS_DIR/subagent-driven-development/SKILL.md" '
+  s/Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review\./Execute a plan by delegating each independent task to a fresh Codex worker subagent when the user has requested subagent-driven work or delegation is otherwise explicitly allowed. Run two-stage review after each task: spec compliance first, then code quality./g;
+  s/They should never inherit your session.s context or history/They should not inherit broad session history unless needed/g;
+  s/"executing-plans" \[shape=box\];/"Inline execution" [shape=box];/g;
+  s/"Stay in this session\?" -> "executing-plans" \[label="no - parallel session"\];/"Stay in this session?" -> "Inline execution" [label="no - parallel session"];/g;
+  s/Mark task complete in TodoWrite/Mark task complete in the task plan/g;
+  s/create TodoWrite/create\/update task plan/g;
+  s/Create TodoWrite/Create or update the task plan/g;
+  s/Use superpowers:finishing-a-development-branch/Run final verification and summarize\/ship per user request/g;
+  s/\n## Model Selection/\nUse Codex `spawn_agent`\/`wait_agent` for subagent work, following the active Codex delegation rules. Give workers clear ownership, remind them they are not alone in the codebase, and do not dispatch parallel workers to overlapping write sets.\n\n## Model Selection/g;
+  s/\*\*Required workflow skills:\*\*\n- \*\*superpowers:using-git-worktrees\*\* - REQUIRED: Set up isolated workspace before starting\n- \*\*superpowers:writing-plans\*\* - Creates the plan this skill executes\n- \*\*superpowers:requesting-code-review\*\* - Code review template for reviewer subagents\n- \*\*superpowers:finishing-a-development-branch\*\* - Complete development after all tasks/**Required workflow skills:**\n- **\$writing-plans** - Creates the plan this skill executes\n- **Codex task plan** - Use Codex'\''s built-in task plan for progress tracking\n- **\$verification-before-completion** - Run final verification before claiming completion/g;
+  s/\*\*Subagents should use:\*\*\n- \*\*superpowers:test-driven-development\*\* - Subagents follow TDD for each task/**Subagents should use:**\n- **\$test-driven-development** - Subagents follow TDD for each task/g;
+  s/\*\*Alternative workflow:\*\*\n- \*\*superpowers:executing-plans\*\* - Use for parallel session instead of same-session execution/**Alternative workflow:**\n- Inline execution in the current Codex session for tightly coupled tasks or when subagent delegation is not appropriate/g;
+'
+
+patch_file "$CODEX_SKILLS_DIR/subagent-driven-development/implementer-prompt.md" '
+  s/Task tool \(general-purpose\):/Codex worker subagent:/g;
+  s/(You are implementing Task N: \[task name\]\n)/$1\n    You are not alone in this codebase. Do not revert or overwrite unrelated\n    changes made by others. Keep your writes scoped to the task ownership\n    described by the controller.\n/g;
+'
+
+patch_file "$CODEX_SKILLS_DIR/subagent-driven-development/spec-reviewer-prompt.md" '
+  s/Task tool \(general-purpose\):/Codex reviewer subagent:/g;
+'
+
+patch_file "$CODEX_SKILLS_DIR/subagent-driven-development/code-quality-reviewer-prompt.md" '
+  s/Task tool \(superpowers:code-reviewer\):\n  Use template at requesting-code-review\/code-reviewer\.md/Codex reviewer subagent:\n  Review the implementation diff between BASE_SHA and HEAD_SHA./g;
+  s/\*\*Code reviewer returns:\*\* Strengths, Issues \(Critical\/Important\/Minor\), Assessment/**Code reviewer returns:** Issues first, ordered by severity with file:line references; then any residual test gaps; then a brief assessment. If there are no issues, say so clearly./g;
+'
+
+patch_file "$CODEX_SKILLS_DIR/writing-plans/plan-document-reviewer-prompt.md" '
+  s/Task tool \(general-purpose\):/Codex reviewer subagent:/g;
+'
+
+echo "Codex superpowers overlays refreshed."
